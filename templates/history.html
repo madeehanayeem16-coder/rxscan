@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RxScan - History</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f0f4f8; min-height: 100vh; }
+        .header { background: #2c7be5; color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 1.5rem; }
+        .header-links a { color: white; text-decoration: none; margin-left: 20px; }
+        .container { max-width: 800px; margin: 40px auto; padding: 20px; }
+        .filters { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; gap: 15px; flex-wrap: wrap; }
+        .filters select, .filters input { padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; }
+        .card { background: white; border-radius: 12px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .card-header h3 { color: #2c7be5; }
+        .card-meta { color: #999; font-size: 0.85rem; margin-bottom: 10px; }
+        .result-text { white-space: pre-wrap; line-height: 1.8; color: #333; font-size: 0.95rem; }
+        .delete-btn { background: #ff4444; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; }
+        .delete-btn:hover { background: #cc0000; }
+        .member-badge { background: #e8f0fe; color: #2c7be5; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; margin-right: 10px; }
+        .empty { text-align: center; padding: 60px; color: #999; }
+        .btn { background: #2c7be5; color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>💊 RxScan - History</h1>
+        <div class="header-links">
+            <a href="/">🏠 Home</a>
+            <a href="/logout">🚪 Logout</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="filters">
+            <select id="memberFilter" onchange="filterHistory()">
+                <option value="all">👨‍👩‍👧 All Members</option>
+                <option value="self">👤 Self</option>
+                <option value="spouse">💑 Spouse</option>
+                <option value="child">👶 Child</option>
+                <option value="parent">👴 Parent</option>
+            </select>
+            <select id="sortFilter" onchange="filterHistory()">
+                <option value="newest">📅 Newest First</option>
+                <option value="oldest">📅 Oldest First</option>
+            </select>
+            <input type="date" id="dateFilter" onchange="filterHistory()">
+        </div>
+
+        {% if prescriptions %}
+            {% for p in prescriptions %}
+            <div class="card" data-member="{{ p.member }}" data-date="{{ p.date.strftime('%Y-%m-%d') }}">
+                <div class="card-header">
+                    <div>
+                        <span class="member-badge">{{ p.member }}</span>
+                        <h3 style="display:inline">📄 {{ p.filename }}</h3>
+                    </div>
+                    <button class="delete-btn" onclick="deleteHistory({{ p.id }})">🗑️ Delete</button>
+                </div>
+                <div class="card-meta">📅 {{ p.date.strftime('%d %b %Y') }} &nbsp; 🕐 {{ p.date.strftime('%I:%M %p') }}</div>
+                <div class="result-text">{{ p.result }}</div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty">
+                <h2>No prescriptions yet!</h2>
+                <p>Upload your first prescription</p>
+                <br><br>
+                <a href="/" class="btn">Upload Now</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function filterHistory() {
+            const member = document.getElementById('memberFilter').value;
+            const sort = document.getElementById('sortFilter').value;
+            const date = document.getElementById('dateFilter').value;
+            const cards = Array.from(document.querySelectorAll('.card'));
+
+            cards.forEach(card => {
+                let show = true;
+                if (member !== 'all' && card.dataset.member !== member) show = false;
+                if (date && card.dataset.date !== date) show = false;
+                card.style.display = show ? 'block' : 'none';
+            });
+
+            if (sort === 'oldest') cards.reverse().forEach(c => c.parentNode.appendChild(c));
+            else cards.forEach(c => c.parentNode.appendChild(c));
+        }
+
+        async function deleteHistory(id) {
+            if (!confirm('Delete this prescription?')) return;
+            const response = await fetch(`/delete/${id}`, { method: 'POST' });
+            const data = await response.json();
+            if (data.success) location.reload();
+        }
+    </script>
+</body>
+</html>

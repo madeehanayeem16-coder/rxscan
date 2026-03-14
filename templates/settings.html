@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RxScan - Settings</title>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            body { background: linear-gradient(135deg, #f5f0ff, #ede7f6) !important; }
+            .card { background: white !important; color: #333 !important; }
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #f5f0ff, #ede7f6); min-height: 100vh; }
+        .header { background: linear-gradient(135deg, #7c3aed, #9d4edd); color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(124,58,237,0.3); }
+        .header h1 { font-size: 1.5rem; }
+        .header-links a { color: white; text-decoration: none; margin-left: 15px; background: rgba(255,255,255,0.15); padding: 8px 15px; border-radius: 20px; transition: 0.3s; }
+        .header-links a:hover { background: rgba(255,255,255,0.3); }
+        .container { max-width: 600px; margin: 40px auto; padding: 20px; }
+        .card { background: white; border-radius: 16px; padding: 30px; margin-bottom: 20px; box-shadow: 0 8px 30px rgba(124,58,237,0.1); border: 1px solid #e9d5ff; }
+        .card h2 { color: #7c3aed; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #f5f0ff; font-size: 1.2rem; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 5px; color: #555; font-weight: bold; font-size: 0.95rem; }
+        input[type="password"], select { width: 100%; padding: 12px; border: 2px solid #e9d5ff; border-radius: 10px; font-size: 1rem; outline: none; color: #333; background: white; }
+        input[type="password"]:focus, select:focus { border-color: #9d4edd; }
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f5f0ff; }
+        .toggle-row:last-child { border-bottom: none; }
+        .toggle-row span { color: #555; font-size: 0.95rem; }
+        .toggle-row small { color: #aaa; font-size: 0.8rem; display: block; }
+        .toggle { position: relative; width: 50px; height: 26px; }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #ddd; border-radius: 26px; transition: 0.3s; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s; }
+        input:checked + .slider { background: #7c3aed; }
+        input:checked + .slider:before { transform: translateX(24px); }
+        .btn { background: linear-gradient(135deg, #7c3aed, #9d4edd); color: white; border: none; padding: 12px 20px; border-radius: 10px; font-size: 1rem; cursor: pointer; width: 100%; transition: 0.3s; box-shadow: 0 4px 15px rgba(124,58,237,0.2); }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-danger { background: linear-gradient(135deg, #ff4444, #cc0000); box-shadow: 0 4px 15px rgba(255,68,68,0.2); }
+        .btn-danger:hover { transform: translateY(-2px); }
+        .success { background: #e0ffe0; color: #008000; padding: 10px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+        .error-msg { background: #ffe0e0; color: #c00; padding: 10px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+        .privacy-text { color: #666; font-size: 0.9rem; line-height: 1.6; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>💊 RxScan - Settings</h1>
+        <div class="header-links">
+            <a href="/">🏠 Home</a>
+            <a href="/history">📋 History</a>
+            <a href="/logout">🚪 Logout</a>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <!-- Change Password -->
+        <div class="card">
+            <h2>🔑 Change Password</h2>
+            {% if password_success %}
+            <div class="success">✅ Password changed successfully!</div>
+            {% endif %}
+            {% if password_error %}
+            <div class="error-msg">❌ {{ password_error }}</div>
+            {% endif %}
+            <form method="POST" action="/change-password">
+                <div class="form-group">
+                    <label>Current Password</label>
+                    <input type="password" name="current_password" placeholder="Enter current password" required>
+                </div>
+                <div class="form-group">
+                    <label>New Password</label>
+                    <input type="password" name="new_password" placeholder="Enter new password" required>
+                </div>
+                <div class="form-group">
+                    <label>Confirm New Password</label>
+                    <input type="password" name="confirm_password" placeholder="Confirm new password" required>
+                </div>
+                <button type="submit" class="btn">🔑 Update Password</button>
+            </form>
+        </div>
+
+        <!-- Customization -->
+        <div class="card">
+            <h2>🎨 Customization</h2>
+            <div class="form-group">
+                <label>Language</label>
+                <select onchange="saveSetting('language', this.value)">
+                    <option value="english">🇬🇧 English</option>
+                    <option value="hindi">🇮🇳 Hindi</option>
+                    <option value="kannada">🇮🇳 Kannada</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Font Size</label>
+                <select onchange="saveSetting('fontsize', this.value)">
+                    <option value="small">Small</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="large">Large</option>
+                </select>
+            </div>
+            <div class="toggle-row">
+                <div>
+                    <span>Dark Mode</span>
+                    <small>Use dark theme</small>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" onchange="saveSetting('darkmode', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="card">
+            <h2>🔔 Notification Preferences</h2>
+            <div class="toggle-row">
+                <div>
+                    <span>Email Notifications</span>
+                    <small>Get email after each analysis</small>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" checked onchange="saveSetting('email_notif', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="toggle-row">
+                <div>
+                    <span>Medicine Reminders</span>
+                    <small>Daily medicine reminder emails</small>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" onchange="saveSetting('med_reminder', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="toggle-row">
+                <div>
+                    <span>Analysis Complete Alert</span>
+                    <small>Browser notification when done</small>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" checked onchange="saveSetting('analysis_alert', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Safety -->
+        <div class="card">
+            <h2>🛡️ Safety Settings</h2>
+            <div class="toggle-row">
+                <div>
+                    <span>Auto Logout</span>
+                    <small>Logout after 30 minutes of inactivity</small>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" checked onchange="saveSetting('auto_logout', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="toggle-row">
+                <div>
+                    <span>Login Alerts</span>
+                    <small>Email alert on new login</small>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" onchange="saveSetting('login_alert', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="toggle-row">
+                <div>
+                    <span>Two Factor Authentication</span>
+                    <small>Extra security on login</small>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" onchange="saveSetting('2fa', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Data Privacy -->
+        <div class="card">
+            <h2>🔒 Data Privacy</h2>
+            <p class="privacy-text">Your prescription data is stored securely on our local database. We never share your data with third parties. Only the prescription image is sent to Groq AI API for analysis.</p>
+            <div class="toggle-row">
+                <div>
+                    <span>Save Prescription History</span>
+                    <small>Store analyzed prescriptions</small>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" checked onchange="saveSetting('save_history', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="toggle-row">
+                <div>
+                    <span>Anonymous Analytics</span>
+                    <small>Help improve the app</small>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" onchange="saveSetting('analytics', this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <br>
+            <button class="btn" onclick="exportData()">📥 Export My Data</button>
+        </div>
+
+        <!-- Delete Account -->
+        <div class="card">
+            <h2>🗑️ Delete Account</h2>
+            <p class="privacy-text">This will permanently delete your account and all prescription history. This action cannot be undone!</p>
+            <form method="POST" action="/delete-account" onsubmit="return confirm('Are you sure? This cannot be undone!')">
+                <div class="form-group">
+                    <label>Enter Password to Confirm</label>
+                    <input type="password" name="password" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="btn btn-danger">🗑️ Delete My Account</button>
+            </form>
+        </div>
+
+    </div>
+
+    <script>
+        function saveSetting(key, value) {
+            localStorage.setItem('rxscan_' + key, value);
+            showToast('Setting saved!');
+        }
+
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.textContent = '✅ ' + msg;
+            toast.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#7c3aed;color:white;padding:12px 20px;border-radius:10px;z-index:999;font-size:0.9rem;';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+
+        function exportData() {
+            showToast('Exporting data...');
+        }
+
+        // Load saved settings
+        window.onload = function() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(cb => {
+                const key = cb.getAttribute('onchange').match(/'([^']+)'/)[1];
+                const saved = localStorage.getItem('rxscan_' + key);
+                if (saved !== null) cb.checked = saved === 'true';
+            });
+        }
+    </script>
+</body>
+</html>

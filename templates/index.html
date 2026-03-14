@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RxScan - Prescription Analyzer</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#7c3aed">
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/service-worker.js');
+            });
+        }
+    </script>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            body { background: linear-gradient(135deg, #f5f0ff, #ede7f6) !important; color: #333 !important; }
+            .upload-box { background: white !important; color: #333 !important; }
+            .result-box { background: white !important; color: #333 !important; }
+            .result-text { color: #333 !important; }
+            .upload-box p { color: #888 !important; }
+            .upload-box h2 { color: #7c3aed !important; }
+            input, select { background: white !important; color: #7c3aed !important; }
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #f5f0ff, #ede7f6); min-height: 100vh; }
+        .bg-decoration { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; overflow: hidden; }
+        .bg-decoration span { position: absolute; font-size: 3rem; opacity: 0.06; }
+        .header { background: linear-gradient(135deg, #7c3aed, #9d4edd); color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(124,58,237,0.3); position: relative; z-index: 2; }
+        .header h1 { font-size: 1.8rem; letter-spacing: 1px; }
+        .header-links a { color: white; text-decoration: none; margin-left: 15px; font-size: 0.95rem; background: rgba(255,255,255,0.15); padding: 8px 15px; border-radius: 20px; transition: 0.3s; }
+        .header-links a:hover { background: rgba(255,255,255,0.3); }
+        .header-links span { opacity: 0.9; margin-left: 15px; }
+        .container { max-width: 800px; margin: 40px auto; padding: 20px; position: relative; z-index: 1; }
+        .upload-box { background: white; border-radius: 16px; padding: 40px; text-align: center; box-shadow: 0 8px 30px rgba(124,58,237,0.1); border: 1px solid #e9d5ff; }
+        .upload-box h2 { color: #7c3aed; margin-bottom: 10px; font-size: 1.5rem; }
+        .upload-box p { color: #888; margin-bottom: 20px; }
+        input[type="file"] { display: none; }
+        .upload-options { display: flex; gap: 15px; margin-bottom: 20px; }
+        .upload-label { background: linear-gradient(135deg, #f5f0ff, #ede7f6); border: 2px dashed #9d4edd; border-radius: 12px; padding: 30px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.3s; flex: 1; }
+        .upload-label:hover { background: #e9d5ff; }
+        .camera-label { background: linear-gradient(135deg, #f0fff4, #e6ffed); border: 2px dashed #22c55e; border-radius: 12px; padding: 30px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.3s; flex: 1; }
+        .camera-label:hover { background: #dcfce7; }
+        .upload-icon { font-size: 2.5rem; margin-bottom: 8px; }
+        .upload-label span, .camera-label span { font-size: 0.9rem; color: #666; }
+        #file-name { color: #7c3aed; font-weight: bold; margin-top: 10px; font-size: 0.9rem; }
+        .tips-box { background: linear-gradient(135deg, #fffbeb, #fef3c7); border: 1px solid #fcd34d; border-radius: 12px; padding: 15px 20px; margin-bottom: 20px; text-align: left; }
+        .tips-box h4 { color: #d97706; margin-bottom: 8px; }
+        .tips-box ul { list-style: none; }
+        .tips-box ul li { color: #666; font-size: 0.9rem; padding: 3px 0; }
+        .tips-box ul li:before { content: "✅ "; }
+        .member-select { width: 100%; padding: 12px; border: 2px solid #e9d5ff; border-radius: 10px; font-size: 1rem; margin-bottom: 20px; color: #7c3aed; outline: none; background: white; }
+        .member-select:focus { border-color: #9d4edd; }
+        .btn { background: linear-gradient(135deg, #7c3aed, #9d4edd); color: white; border: none; padding: 15px 40px; border-radius: 10px; font-size: 1rem; cursor: pointer; width: 100%; transition: 0.3s; box-shadow: 0 4px 15px rgba(124,58,237,0.3); }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(124,58,237,0.4); }
+        .btn:disabled { background: #ccc; cursor: not-allowed; transform: none; box-shadow: none; }
+        .result-box { background: white; border-radius: 16px; padding: 30px; margin-top: 30px; box-shadow: 0 8px 30px rgba(124,58,237,0.1); border: 1px solid #e9d5ff; display: none; }
+        .result-box h2 { color: #7c3aed; margin-bottom: 20px; border-bottom: 2px solid #f5f0ff; padding-bottom: 10px; }
+        .result-text { line-height: 2; color: #333; font-size: 1rem; }
+        .section-title { color: #7c3aed; font-size: 1.1rem; font-weight: bold; margin: 15px 0 5px; }
+        .field-label { color: #9d4edd; font-weight: bold; }
+        .not-mentioned { color: #bbb; font-style: italic; }
+        .divider { border: 1px solid #e9d5ff; margin: 5px 0; }
+        .loading { text-align: center; padding: 20px; display: none; }
+        .loading p { color: #7c3aed; font-size: 1.1rem; }
+        .error { background: #ffe0e0; color: #c00; padding: 15px; border-radius: 10px; margin-top: 20px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="bg-decoration">
+        <span style="top:5%;left:5%">💊</span>
+        <span style="top:15%;right:8%">🏥</span>
+        <span style="top:30%;left:2%">💉</span>
+        <span style="top:45%;right:3%">🩺</span>
+        <span style="top:60%;left:8%">💊</span>
+        <span style="top:75%;right:10%">🏥</span>
+        <span style="top:85%;left:3%">💉</span>
+        <span style="top:20%;left:45%">🩺</span>
+        <span style="top:70%;left:40%">💊</span>
+    </div>
+
+    <div class="header">
+        <h1>💊 RxScan</h1>
+        <div class="header-links">
+            <span>👤 {{ username }}</span>
+            <a href="/history">📋 History</a>
+            <a href="/settings">⚙️ Settings</a>
+            <a href="/logout">🚪 Logout</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="upload-box">
+            <h2>Upload Prescription</h2>
+            <p>Upload or take a photo of your prescription</p>
+
+            <div class="tips-box">
+                <h4>📸 Tips for best results:</h4>
+                <ul>
+                    <li>Make sure prescription is fully visible</li>
+                    <li>Use good lighting — avoid shadows</li>
+                    <li>Hold camera steady — avoid blur</li>
+                    <li>Keep prescription flat on surface</li>
+                    <li>Make sure all text is readable</li>
+                </ul>
+            </div>
+
+            <div class="upload-options">
+                <label class="upload-label" for="prescription">
+                    <div class="upload-icon">📁</div>
+                    <strong>Upload File</strong>
+                    <span>JPG, PNG from gallery</span>
+                </label>
+                <label class="camera-label" for="camera">
+                    <div class="upload-icon">📷</div>
+                    <strong>Take Photo</strong>
+                    <span>Use camera directly</span>
+                </label>
+            </div>
+
+            <input type="file" id="prescription" accept="image/*">
+            <input type="file" id="camera" accept="image/*" capture="environment">
+
+            <div id="file-name">No file selected</div>
+            <br>
+
+            <select class="member-select" id="member">
+                <option value="self">👤 Self</option>
+                <option value="spouse">💑 Spouse</option>
+                <option value="child">👶 Child</option>
+                <option value="parent">👴 Parent</option>
+            </select>
+
+            <button class="btn" onclick="analyzePrescription()" id="analyze-btn">
+                🔍 Analyze Prescription
+            </button>
+        </div>
+
+        <div class="loading" id="loading">
+            <p>⏳ Analyzing prescription... please wait</p>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="result-box" id="result-box">
+            <h2>📋 Prescription Details</h2>
+            <div class="result-text" id="result-text"></div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+
+        document.getElementById('prescription').addEventListener('change', function() {
+            if (this.files[0]) {
+                selectedFile = this.files[0];
+                document.getElementById('file-name').textContent = '📁 ' + this.files[0].name;
+                document.getElementById('file-name').style.color = '#7c3aed';
+            }
+        });
+
+        document.getElementById('camera').addEventListener('change', function() {
+            if (this.files[0]) {
+                selectedFile = this.files[0];
+                document.getElementById('file-name').textContent = '📷 Photo captured: ' + this.files[0].name;
+                document.getElementById('file-name').style.color = '#22c55e';
+            }
+        });
+
+        function formatResult(text) {
+            const lines = text.split('\n');
+            let html = '';
+            for (let line of lines) {
+                line = line.trim();
+                if (!line) continue;
+                if (line === 'PRESCRIPTION DETAILS' || line === 'MEDICINES' || line === 'INSTRUCTIONS') {
+                    const icons = {'PRESCRIPTION DETAILS': '💊', 'MEDICINES': '💉', 'INSTRUCTIONS': '📋'};
+                    html += `<div class="section-title">${icons[line]} ${line}</div>`;
+                } else if (line.startsWith('=')) {
+                    html += `<hr class="divider">`;
+                } else {
+                    line = line.replace(/(Patient Name:|Age:|Date:|Doctor Name:|Hospital\/Clinic:|Medicine \d+:|Instructions:|Refills:)/g, '<span class="field-label">$1</span>');
+                    line = line.replace(/Not mentioned/g, '<span class="not-mentioned">Not mentioned</span>');
+                    html += `<div>${line}</div>`;
+                }
+            }
+            return html;
+        }
+
+        async function analyzePrescription() {
+            if (!selectedFile) {
+                alert('Please select or take a prescription photo first!');
+                return;
+            }
+
+            document.getElementById('analyze-btn').disabled = true;
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result-box').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('prescription', selectedFile);
+            formData.append('member', document.getElementById('member').value);
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('analyze-btn').disabled = false;
+
+                if (data.error) {
+                    document.getElementById('error').textContent = data.error;
+                    document.getElementById('error').style.display = 'block';
+                } else {
+                    document.getElementById('result-text').innerHTML = formatResult(data.result);
+                    document.getElementById('result-box').style.display = 'block';
+                }
+            } catch (err) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('analyze-btn').disabled = false;
+                document.getElementById('error').textContent = 'Something went wrong. Please try again.';
+                document.getElementById('error').style.display = 'block';
+            }
+        }
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/service-worker.js');
+            });
+        }
+    </script>
+</body>
+</html>
