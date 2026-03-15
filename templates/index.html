@@ -6,6 +6,7 @@
     <title>RxScan - Prescription Analyzer</title>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#7c3aed">
+    <meta name="ngrok-skip-browser-warning" content="true">
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
@@ -227,12 +228,6 @@
                 document.getElementById('error').textContent = 'Something went wrong. Please try again.';
                 document.getElementById('error').style.display = 'block';
             }
-        }
-
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/service-worker.js');
-            });
         }
     </script>
 </body>
